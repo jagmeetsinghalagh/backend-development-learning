@@ -26,6 +26,34 @@ connect.then( (db) => {
 }, (err) => { console.log(err);
 });
 
+// Basic Authentication
+function auth(req,res,next) {
+	console.log(req.headers);
+	var authHeader = req.headers.authorization;
+	if(!authHeader) {
+		var err = new Error("You Are Not Authorized ");
+		res.setHeader("www-Authenticate","Basic");
+		err.status = 401;
+		return next(err);
+	}
+
+	var auth = new Buffer(authHeader.split(' ')[1],'base64').toString().split(':');
+
+	var user = auth[0];
+	var password = auth[1];
+	if(user == 'admin' && password == 'password') {
+		next();	
+	}
+	else {
+		var err = new Error('You are not authenticated!');
+      	res.setHeader('WWW-Authenticate', 'Basic');      
+      	err.status = 401;
+      	next(err);
+	}
+};
+
+app.use(auth);
+
 //use Dish Router that we have created
 app.use("/dishes",dishRouter);
 

@@ -1,6 +1,11 @@
 const http = require('http');
 const express = require('express');
 const mongoose = require('mongoose');
+const cookieParser = require('cookie-parser');
+const session = require('express-session');
+const fileStore = require('session-file-store')(session);
+
+const userRouter  = require('./routes/userRouter');
 const dishRouter = require('./routes/dishRouter');
 
 //define hostname and port number for http server
@@ -26,29 +31,34 @@ connect.then( (db) => {
 }, (err) => { console.log(err);
 });
 
+app.use(session({
+	name: 'session_id',
+	secret: '12345-67890',
+	saveUninitialized: false,
+  	resave: false, 
+	store: new fileStore()
+}));
+
+app.use("/users",userRouter);
+
 // Basic Authentication
 function auth(req,res,next) {
-	console.log(req.headers);
-	var authHeader = req.headers.authorization;
-	if(!authHeader) {
-		var err = new Error("You Are Not Authorized ");
-		res.setHeader("www-Authenticate","Basic");
-		err.status = 401;
-		return next(err);
-	}
-
-	var auth = new Buffer(authHeader.split(' ')[1],'base64').toString().split(':');
-
-	var user = auth[0];
-	var password = auth[1];
-	if(user == 'admin' && password == 'password') {
-		next();	
+	console.log(req.session);
+	if (!req.session.user) {
+			var err = new Error("You Are Not Authorized ");
+			res.setHeader("www-Authenticate","Basic");
+			err.status = 401;
+			return next(err);
 	}
 	else {
-		var err = new Error('You are not authenticated!');
-      	res.setHeader('WWW-Authenticate', 'Basic');      
-      	err.status = 401;
-      	next(err);
+		if (req.session.user === 'authenticated') {
+			next();
+		}
+		else {
+      		var err = new Error('You are not authenticated!');
+      		err.status = 403;
+      		return next(err);
+    	}
 	}
 };
 

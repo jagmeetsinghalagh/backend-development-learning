@@ -4,7 +4,9 @@ const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const fileStore = require('session-file-store')(session);
+const passport = require('passport');
 
+const authenticate = require('./authenticate');
 const userRouter  = require('./routes/userRouter');
 const dishRouter = require('./routes/dishRouter');
 
@@ -22,7 +24,7 @@ server.listen(port,hostname, () => {
 });
 
 //define url of mongoDB server
-const url = "mongodb://localhost:27017/";
+const url = "mongodb://localhost:27017/conFusion";
 //connect to that url
 const connect = mongoose.connect(url);
 
@@ -39,26 +41,21 @@ app.use(session({
 	store: new fileStore()
 }));
 
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use("/users",userRouter);
 
 // Basic Authentication
 function auth(req,res,next) {
-	console.log(req.session);
-	if (!req.session.user) {
+	if (!req.user) {
 			var err = new Error("You Are Not Authorized ");
 			res.setHeader("www-Authenticate","Basic");
 			err.status = 401;
-			return next(err);
+			next(err);
 	}
 	else {
-		if (req.session.user === 'authenticated') {
-			next();
-		}
-		else {
-      		var err = new Error('You are not authenticated!');
-      		err.status = 403;
-      		return next(err);
-    	}
+		next();
 	}
 };
 

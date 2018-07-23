@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const passport = require('passport');
 
+const authenticate = require('../authenticate');
 const User = require('../models/users');
 
 const userRouter = express.Router();
@@ -38,7 +39,7 @@ userRouter.post('/signup', (req,res,next) => {
     			res.json({err: err});
 			}
 			else {
-				passport.authenticate('local')(req,res, () => {
+				passport.authenticate('local',{session:false})(req,res, () => {
 					res.statusCode = 200;
 					res.setHeader('Content-Type', 'application/json');
 					res.json({success: true, status: "Registration Successful"});
@@ -48,23 +49,15 @@ userRouter.post('/signup', (req,res,next) => {
 });
 
 
-userRouter.post('/login', passport.authenticate('local'),(req,res,next) => {
+userRouter.post('/login', passport.authenticate('local',{session:false}),(req,res) => {
+	var token  = authenticate.getToken({ _id: req.user._id });
+	console.log(token);
 	res.statusCode = 200;
 	res.setHeader('Content-Type','application/json');
-	res.json({success: true, status: "You Are Logged in!!!"});
+	res.json({success: true,token: token, status: "You Are Logged in!!!"});
+	console.log(res);
 });
 
-userRouter.get('/logout', (req,res) => {
-	if (req.session) {
-		req.session.destroy();
-		res.clearCookie('session_id');
-		res.end("Successfully Logged Out!");
-	}
-	else {
-		var err = new Error('You are not logged in!');
-    	err.status = 403;
-    	next(err);
-	}
-});
+
 
 module.exports = userRouter;

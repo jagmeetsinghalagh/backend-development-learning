@@ -9,7 +9,7 @@ const userRouter = express.Router();
 userRouter.use(bodyParser.json());
 
 userRouter.route('/')
-	.get( (req,res,next) => {
+	.get( authenticate.verifyUser,(req,res,next) => {
 		User.find({})
 			.then( (users) => {
 				console.log("Found All Users:\n");
@@ -20,7 +20,7 @@ userRouter.route('/')
 			},(err) => { console.log(err); })
 			.catch( (err) => { console.log(err); });
 	})
-	.delete( (req,res,next) => {
+	.delete(authenticate.verifyUser, (req,res,next) => {
 		User.remove({})
 			.then( (resp) => {
 				res.statusCode = 200;
